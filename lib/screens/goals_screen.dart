@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'main_layout.dart';
 
 class GoalsScreen extends StatelessWidget {
+  const GoalsScreen({super.key});
   @override
   Widget build(BuildContext context) {
     return MainLayout(

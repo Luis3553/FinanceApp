@@ -4,8 +4,7 @@ class MainLayout extends StatelessWidget {
   final Widget child;
   final int currentIndex;
 
-  const MainLayout({Key? key, required this.child, required this.currentIndex})
-    : super(key: key);
+  const MainLayout({super.key, required this.child, required this.currentIndex});
 
   void _onItemTapped(BuildContext context, int index) {
     final routes = ['/home', '/converter', '/goals', '/news', '/'];

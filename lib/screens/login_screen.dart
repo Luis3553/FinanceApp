@@ -35,6 +35,7 @@ class _LoginScreenState extends State<LoginScreen> {
     final pin = _pinController.text.trim();
 
     if (username.isEmpty || pin.length != 4) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Por favor ingresa un usuario y un PIN de 4 dígitos.'),
@@ -48,6 +49,7 @@ class _LoginScreenState extends State<LoginScreen> {
       final storedPin = prefs.getString('pin');
 
       if (storedUser == username && storedPin == pin) {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('¡Sesión iniciada correctamente!')),
         );
@@ -56,6 +58,7 @@ class _LoginScreenState extends State<LoginScreen> {
           MaterialPageRoute(builder: (context) => const HomeScreen()),
         );
       } else {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Credenciales inválidas.')),
         );
@@ -63,6 +66,7 @@ class _LoginScreenState extends State<LoginScreen> {
     } else {
       await prefs.setString('user', username);
       await prefs.setString('pin', pin);
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('¡Usuario registrado con éxito!')),
       );
