@@ -1,87 +1,73 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:lucide_icons/lucide_icons.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 import 'main_layout.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  double totalAhorrado = 0;
+  int metasActivas = 0;
+  bool _isFirstLoad = true;
+  String username = '';
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_isFirstLoad) {
+      _loadResumenFinanciero();
+      _isFirstLoad = false;
+    } else {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _loadResumenFinanciero();
+      });
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUser();
+  }
+
+  Future<void> _loadUser() async {
+    final prefs = await SharedPreferences.getInstance();
+    final storedUser = prefs.getString('user');
+    setState(() {
+      username = storedUser ?? '';
+    });
+  }
+
+  Future<void> _loadResumenFinanciero() async {
+    final prefs = await SharedPreferences.getInstance();
+    final currentUser = prefs.getString('current_user');
+    final savedGoals = prefs.getString('goals');
+
+    if (savedGoals != null && currentUser != null) {
+      final List decoded = json.decode(savedGoals);
+      final userGoals =
+          decoded.where((g) => g['user_id'] == currentUser).toList();
+
+      final double total = userGoals.fold(
+        0.0,
+        (sum, g) => sum + (g['current'] ?? 0),
+      );
+      setState(() {
+        totalAhorrado = total;
+        metasActivas = userGoals.length;
+      });
+    }
+  }
 
   String getFormattedDate() {
     final now = DateTime.now();
     return DateFormat("EEEE, d 'de' MMMM 'de' y", 'es_ES').format(now);
-  }
-
-  Widget _buildExchangeCard(
-    String currency,
-    String buy,
-    String sell,
-    String change,
-    Color iconColor,
-    Color chipColor,
-  ) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: const Color.fromARGB(255, 236, 236, 240),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            backgroundColor: iconColor.withValues(alpha: 0.2),
-            child: Text(currency[0], style: TextStyle(color: iconColor)),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '$currency/DOP',
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-                Text(
-                  'Compra: RD\$$buy\nVenta: RD\$$sell',
-                  style: const TextStyle(fontSize: 13),
-                ),
-              ],
-            ),
-          ),
-          Chip(
-            label: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(LucideIcons.trendingDown, color: Colors.white, size: 16),
-                const SizedBox(width: 4),
-                Text(
-                  change,
-                  style: const TextStyle(color: Colors.white, fontSize: 12),
-                ),
-              ],
-            ),
-            backgroundColor: chipColor,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildInterestTile(String title, String rate, Color bgColor) {
-    return ListTile(
-      title: Text(title),
-      trailing: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-        decoration: BoxDecoration(
-          color: bgColor,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Text(
-          rate,
-          style: const TextStyle(color: Colors.white, fontSize: 12),
-        ),
-      ),
-    );
   }
 
   @override
@@ -94,10 +80,13 @@ class HomeScreen extends StatelessWidget {
             padding: const EdgeInsets.all(20),
             child: ListView(
               children: [
-                const Center(
+                Center(
                   child: Text(
-                    '¡Hola, Luis! 👋',
-                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                    '¡Hola, $username! 👋',
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -109,7 +98,22 @@ class HomeScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 24),
 
-                // Tasas de cambio
+                // Frase motivacional
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEDF2F7),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Text(
+                    '💡 “No ahorres lo que queda después de gastar. Gasta lo que queda después de ahorrar.” – Warren Buffett',
+                    style: TextStyle(fontSize: 14, fontStyle: FontStyle.italic),
+                  ),
+                ),
+
+                const SizedBox(height: 24),
+
+                // Resumen financiero (dinámico)
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
@@ -121,56 +125,39 @@ class HomeScreen extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
-                        '💳 Tasas de Cambio - Banco Popular',
-                        style: TextStyle(fontWeight: FontWeight.w600),
+                        'Resumen Financiero',
+                        style: TextStyle(fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 12),
-                      _buildExchangeCard(
-                        'USD',
-                        '58.50',
-                        '59.20',
-                        '0.15%',
-                        Colors.green,
-                        Colors.black,
+                      Text(
+                        '💰 Total Ahorrado: RD\$ ${totalAhorrado.toStringAsFixed(2)}',
                       ),
-                      _buildExchangeCard(
-                        'EUR',
-                        '62.80',
-                        '63.95',
-                        '0.25%',
-                        Colors.blue,
-                        Colors.redAccent,
-                      ),
+                      Text('🎯 Metas activas: $metasActivas'),
                     ],
                   ),
                 ),
 
                 const SizedBox(height: 24),
-                // Tasas de interés
+
+                // Tips financieros
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: const Color(0xFFF6F6F6),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: const Color(0xFFEAEAEA)),
                   ),
-                  child: Column(
+                  child: const Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'Tasas de Interés',
+                      Text(
+                        '📘 Tip del Día',
                         style: TextStyle(fontWeight: FontWeight.bold),
                       ),
-                      _buildInterestTile('Ahorros', '3.5% anual', Colors.grey),
-                      _buildInterestTile(
-                        'Certificado 12 meses',
-                        '7.2% anual',
-                        Colors.black,
-                      ),
-                      _buildInterestTile(
-                        'Préstamos personales',
-                        '12.5% anual',
-                        Colors.redAccent,
+                      SizedBox(height: 8),
+                      Text(
+                        'Define metas con fechas específicas para mantener tu motivación y controlar tus avances.',
+                        style: TextStyle(fontSize: 14),
                       ),
                     ],
                   ),
@@ -197,7 +184,12 @@ class HomeScreen extends StatelessWidget {
                         children: [
                           Expanded(
                             child: ElevatedButton(
-                              onPressed: () {},
+                              onPressed: () {
+                                Navigator.pushReplacementNamed(
+                                  context,
+                                  '/converter',
+                                );
+                              },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.black,
                                 padding: const EdgeInsets.symmetric(
@@ -210,13 +202,19 @@ class HomeScreen extends StatelessWidget {
                               child: const Text(
                                 'Convertir\nDivisas',
                                 textAlign: TextAlign.center,
+                                style: TextStyle(color: Colors.white),
                               ),
                             ),
                           ),
                           const SizedBox(width: 12),
                           Expanded(
                             child: ElevatedButton(
-                              onPressed: () {},
+                              onPressed: () {
+                                Navigator.pushReplacementNamed(
+                                  context,
+                                  '/goals',
+                                );
+                              },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFFF3F3F3),
                                 foregroundColor: Colors.black,

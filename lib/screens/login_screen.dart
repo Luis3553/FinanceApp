@@ -49,6 +49,7 @@ class _LoginScreenState extends State<LoginScreen> {
       final storedPin = prefs.getString('pin');
 
       if (storedUser == username && storedPin == pin) {
+        await prefs.setString('current_user', username);
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('¡Sesión iniciada correctamente!')),
@@ -70,7 +71,11 @@ class _LoginScreenState extends State<LoginScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('¡Usuario registrado con éxito!')),
       );
-      setState(() => isLogin = true);
+      setState(() {
+        isLogin = true;
+        _usernameController.clear();
+        _pinController.clear();
+      });
     }
   }
 
@@ -220,7 +225,10 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         child: Text(
                           isLogin ? 'Iniciar Sesión' : 'Registrarse',
-                          style: const TextStyle(fontSize: 16),
+                          style: const TextStyle(
+                            fontSize: 16,
+                            color: Colors.white,
+                          ),
                         ),
                       ),
                     ),

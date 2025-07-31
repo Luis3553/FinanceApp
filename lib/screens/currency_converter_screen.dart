@@ -87,7 +87,7 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
                       child: Column(
                         children: [
                           const Text(
-                            'Conversión',
+                            'Conversión (Tasa del Banco Popular)',
                             style: TextStyle(fontWeight: FontWeight.bold),
                           ),
                           const SizedBox(height: 16),
